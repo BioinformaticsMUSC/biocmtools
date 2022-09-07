@@ -89,3 +89,135 @@ MarkerDimPlot <- function (object, group_by, n = 20){
   }
   
 }
+#' Create a clean dimplot
+#'
+#' @param object The Seurat object
+#' @param group_by The column in the Seurat object meta.data to use to group cells (cluster, sample, etc.)
+#' @importFrom dplyr %>% group_by summarize left_join mutate
+#' @importFrom ggplot2 ggplot
+#' @importFrom ggrastr geom_point_rast 
+#' @importFrom ggrepel geom_text_repel
+#' @examples
+#' CleanDimPlot(seurat_obj, 'seurat_clusters')
+#' @export
+CleanDimPlot <- function (object, group_by) {
+  umap <- as.data.frame(Embeddings(object, reduction = "umap"))
+  meta <- as.data.frame(object@meta.data)
+  
+  df <- cbind(umap,meta)%>% 
+    as.data.frame() 
+  
+  if (!(is.factor(df[[group_by]]))){
+    df[[group_by]] <- factor(df[[group_by]], levels = unique(df[[group_by]]))
+  }
+  
+  
+  label <- data.frame(join_col=levels(df[[group_by]]),label=levels(df[[group_by]]))
+  
+  label_2 <- df %>% 
+    group_by(!!as.name(group_by)) %>% 
+    summarize(UMAP_1 = median(UMAP_1), UMAP_2 = median(UMAP_2)) %>% 
+    mutate(join_col = !!as.name(group_by)) %>%
+    left_join(label) %>%
+    as.data.frame() 
+  
+  col <- get_hue_pal_list(length(levels(df[[group_by]])))
+  new_col = list()
+  i = 0
+  for (f in levels(df[[group_by]])) {
+    new_col[[f]] = col[[as.character(i)]]
+    i = 1 + i
+  }
+  
+  ggplot(df, aes(x=UMAP_1, y=UMAP_2)) +
+    ggrastr::geom_point_rast(aes(colour = .data[[group_by]]), size=0.5) +
+    ggrepel::geom_text_repel(data = label_2, aes(label = label),
+                             color = "black",
+                             segment.colour = "grey60",
+                             box.padding = unit(0.25, "lines"),
+                             point.padding = unit(0.5, "lines"),
+                             nudge_x = .15,
+                             nudge_y = 1,
+                             size = 6) + 
+    scale_colour_manual(values = new_col)+
+    theme_void() +
+    theme(legend.position="none")
+}
+#' Create a clean dimplot split by a specific category
+#'
+#' @param object The Seurat object
+#' @param group_by The column in the Seurat object meta.data to use to group cells (cluster, sample, etc.)
+#' @param split_by The column in the Seurat object to split the DimPlot by
+#' @param ncol Number of columns in final figure (ignored for 3 or fewer plots)
+#' @param split_order Order that split DimPlots will appear
+#' @importFrom dplyr %>% group_by summarize left_join mutate
+#' @importFrom ggplot2 ggplot
+#' @importFrom ggrastr geom_point_rast 
+#' @importFrom ggrepel geom_text_repel
+#' @importFrom patchwork wrap_plots plot_layout
+#' @importFrom stringr str_replace
+#' @examples
+#' MultiDimPlot(seurat_obj, 'seurat_clusters', 'condition', ncol = 4)
+#' @export
+MultiDimPlot <- function(seurat, group_by, split_by, ncol = 2, split_order = NULL) {
+  umap <- as.data.frame(Embeddings(seurat, reduction = "umap"))
+  meta <- as.data.frame(seurat@meta.data)
+  
+  df <- cbind(umap,meta)%>% 
+    as.data.frame() 
+  
+  if (!(is.factor(df[[group_by]]))){
+    df[[group_by]] <- factor(df[[group_by]], levels = unique(df[[group_by]]))
+  }
+  
+  if (!(is.factor(df[[split_by]]))){
+    if (is.null(split_order)) {
+      df[[split_by]] <- factor(df[[split_by]], levels = unique(df[[split_by]]))
+    } else {
+      df[[split_by]] <- factor(df[[split_by]], levels = split_order)
+    }
+  }
+  
+  label <- data.frame(join_col=levels(df[[group_by]]),label=levels(df[[group_by]]))
+  
+  label_2 <- df %>% 
+    group_by(!!as.name(group_by)) %>% 
+    summarize(UMAP_1 = median(UMAP_1), UMAP_2 = median(UMAP_2)) %>% 
+    mutate(join_col = !!as.name(group_by)) %>%
+    left_join(label) %>%
+    as.data.frame() 
+  
+  col <- biocmtools::get_hue_pal_list(length(levels(df[[group_by]])))
+  new_col = list()
+  i = 0
+  for (f in levels(df[[group_by]])) {
+    new_col[[f]] = col[[as.character(i)]]
+    i = 1 + i
+  }
+  viz=list()
+  for (comp in levels(df[[split_by]])) {
+    viz[[comp]] <- df %>%
+      filter(!!as.name(split_by) == comp) %>%
+      ggplot(aes(x=UMAP_1, y=UMAP_2,
+                 color= .data[[group_by]])) +
+      geom_point(size=0.5) + theme_void() +
+      ggrepel::geom_text_repel(data = label_2, aes(label = label),
+                               color = "black",
+                               segment.colour = "grey60",
+                               box.padding = unit(0.25, "lines"),
+                               point.padding = unit(0.5, "lines"),
+                               nudge_x = .15,
+                               nudge_y = 1,
+                               size = 4) +
+      theme(legend.position = "none") +
+      scale_color_manual(values = biocmtools::get_hue_pal_list(length(levels(df[[group_by]])))) +
+      ggtitle(stringr::str_replace(comp, "_", " "))
+    
+  }
+  
+  if (length(levels(df[[split_by]])) < 4) {
+    wrap_plots(viz) + plot_layout(nrow = 1)
+  } else {
+    wrap_plots(viz) + plot_layout(ncol = ncol)
+  }
+}
