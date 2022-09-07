@@ -57,3 +57,26 @@ This function uses presto to generate markers and patchwork to combine the plot 
 MarkerDimPlot(seurat, group_by = 'Cell', n = 20)
 ```
 
+### CleanDimPlot
+
+This function creates a clean DimPlot from a Seurat object, without axes or a legend. It takes the following parameters:
+- seurat = seurat object
+- group_by = category in Seurat meta data to group the cells by
+
+```
+CleanDimPlot(seurat, group_by = 'Cell')
+```
+
+### MultiDimPlot
+
+This function creates an array of Clean DimPlots split by a specified category in the Seurat meta data. It uses the following parameters:
+- seurat = seurat object
+- group_by = category in Seurat meta data to group the cells by
+- split_by = category in Seurat meta data to split the plots by
+- ncol = number of columns for the final figure (ignored for 3 or fewer plots)
+- split_order = order that split plots will appear
+
+```
+MultiDimPlot(seurat, group_by = 'Cell', split_by = 'condition', ncol = 4)
+```
+
