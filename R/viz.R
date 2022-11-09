@@ -221,3 +221,71 @@ MultiDimPlot <- function(seurat, group_by, split_by, ncol = 2, split_order = NUL
     wrap_plots(viz) + plot_layout(ncol = ncol)
   }
 }
+
+#' Create a viz with a UMAP and a bar plot showing percentage of cells assigned to clusters
+#'
+#' @param object The Seurat object
+#' @param cluster_col The column in the Seurat object meta.data to use to determine clusters (e.g. seurat_clusters)
+#' @param condition_col The column in the Seurat object denoting condition
+#' @param replicate_col The column in the Seurat object denoting replicates (male, female, etc.) or cell types
+#' @param data If TRUE, returns a dataframe
+#' @importFrom dplyr %>% group_by select add_count mutate distinct rename
+#' @importFrom tidyr pivot_wider unite
+#' @import ggplot2
+#' @importFrom ggrastr geom_point_rast 
+#' @importFrom ggrepel geom_text_repel
+#' @import patchwork 
+#' @importFrom stringr str_glue
+#' @importFrom Seurat DimPlot
+#' @examples
+#' ClusterProp(seurat_obj, cluster_col = 'seurat_clusters', condition_col = 'activation', replicate_col = 'tcell_type" = 4)
+#' @export
+ClusterProp <- function(seurat, cluster_col, condition_col, replicate_col, data = FALSE) {
+  df <- seurat@meta.data %>%
+    dplyr::select(!!as.name(condition_col), !!as.name(cluster_col), !!as.name(replicate_col)) %>%
+    add_count(!!as.name(condition_col), name = "total_cells_in_condition") %>%
+    group_by(!!as.name(cluster_col), !!as.name(condition_col)) %>%
+    mutate(n_cells_in_cluster = n()) %>%
+    mutate(pct = n_cells_in_cluster / total_cells_in_condition) %>%
+    distinct() %>%
+    dplyr::rename(cluster = !!as.name(cluster_col))
+  
+  p1 <- DimPlot(seurat, group.by = cluster_col, label = T) + ggtitle(str_glue('UMAP - {cluster_col}')) +
+    scale_fill_manual(values = biocmtools::get_hue_pal_list(length(unique(df$cluster))),
+                      drop = TRUE) +
+    scale_color_manual(values = biocmtools::get_hue_pal_list(length(unique(df$cluster))),
+                       drop = TRUE)
+  for (tcell in unique(df[[replicate_col]])) {
+    t_df <- df %>% filter(!!as.name(replicate_col) == tcell)
+    for (act in unique(t_df[[condition_col]])) {
+      p2 <- ggplot(t_df %>% filter(!!as.name(condition_col) == act), 
+                   aes(x = factor(cluster, levels = seq(0, length(unique(df$cluster))-1)), 
+                       y = pct,
+                       color = cluster,
+                       fill = cluster)) + 
+        geom_bar(stat = 'identity') +
+        xlab('Cluster') +
+        ylab(str_glue('Percentage of {act} cells by cluster')) +
+        labs(fill = 'Cluster', color = "Cluster") +
+        scale_fill_manual(values = biocmtools::get_hue_pal_list(length(unique(df$cluster))),
+                          drop = TRUE) +
+        scale_color_manual(values = biocmtools::get_hue_pal_list(length(unique(df$cluster))),
+                           drop = TRUE)
+      
+      
+      (p1 | p2) + plot_annotation(title = str_glue('Percentage of {act} {tcell} cells by cluster'))
+      
+      ggsave(str_glue('/Users/bryanwgranger/biocm/projects/ferreira/s3/main_analysis/{tcell}_{act}_prop_per_cluster.pdf'), width = 10, height = 8)
+      
+      if (isTRUE(data)) {
+        new_df <- df %>%
+          tidyr::unite("combos", !!(as.name(replicate_col)), !!as.name(condition_col), remove = FALSE) %>%
+          tidyr::pivot_wider(names_from = combos,
+                             id_cols = cluster,
+                             values_from = c(pct, n_cells_in_cluster)) %>%
+          arrange(factor(cluster, levels = seq(0, length(cluster)-1)))
+        return (new_df)
+      }
+    }
+  }
+}
