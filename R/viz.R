@@ -238,7 +238,7 @@ MultiDimPlot <- function(seurat, group_by, split_by, ncol = 2, split_order = NUL
 #' @importFrom stringr str_glue
 #' @importFrom Seurat DimPlot
 #' @examples
-#' ClusterProp(seurat_obj, cluster_col = 'seurat_clusters', condition_col = 'activation', replicate_col = 'tcell_type" = 4)
+#' ClusterProp(seurat_obj, cluster_col = 'seurat_clusters', condition_col = 'activation', replicate_col = 'tcell_type' = 4)
 #' @export
 ClusterProp <- function(seurat, cluster_col, condition_col, replicate_col, data = FALSE) {
   df <- seurat@meta.data %>%
