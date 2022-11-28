@@ -20,18 +20,13 @@ BarProp <- function(seurat, x_axis, split_by) {
     distinct() %>%
     mutate(Percentage = split_counts / total_cluster_cells)
   
- #if (all(str_detect(df %>% select(!!as.name(x_axis)), 
-  #                   pattern = "[:digit:]"))) {
-  #  df <- df %>%
-  #    mutate(!!as.name(x_axis) = as.numeric(!!as.name(x_axis)))
-  #}
-  
-    ggplot(df, aes(x = !!as.name(x_axis),
+    ggplot(df, aes(x = factor(!!as.name(x_axis), levels = seq(0, length(unique(!!as.name(x_axis)))-1)),
                y = Percentage,
                fill = !!as.name(split_by),
                col = !!as.name(split_by))) +
     geom_bar(stat = "identity") + ggtitle(str_glue("Bar Proportion Plot")) +
-    theme(axis.text.x = element_text(angle = 60, vjust = 0.9, hjust = 1))
+    theme(axis.text.x = element_text(angle = 60, vjust = 0.9, hjust = 1)) +
+      xlab(x_axis)
 }
 
 #' Create a list of colors for a palette
@@ -122,13 +117,7 @@ CleanDimPlot <- function (object, group_by) {
     as.data.frame() 
   
   col <- get_hue_pal_list(length(levels(df[[group_by]])))
-  new_col = list()
-  i = 0
-  for (f in levels(df[[group_by]])) {
-    new_col[[f]] = col[[as.character(i)]]
-    i = 1 + i
-  }
-  
+
   ggplot(df, aes(x=UMAP_1, y=UMAP_2)) +
     ggrastr::geom_point_rast(aes(colour = .data[[group_by]]), size=0.5) +
     ggrepel::geom_text_repel(data = label_2, aes(label = label),
@@ -139,7 +128,7 @@ CleanDimPlot <- function (object, group_by) {
                              nudge_x = .15,
                              nudge_y = 1,
                              size = 6) + 
-    scale_colour_manual(values = new_col)+
+    scale_colour_manual(values = col)+
     theme_void() +
     theme(legend.position="none")
 }
@@ -240,7 +229,12 @@ MultiDimPlot <- function(seurat, group_by, split_by, ncol = 2, split_order = NUL
 #' @examples
 #' ClusterProp(seurat_obj, cluster_col = 'seurat_clusters', condition_col = 'activation', replicate_col = 'tcell_type' = 4)
 #' @export
-ClusterProp <- function(seurat, cluster_col, condition_col, replicate_col, data = FALSE) {
+ClusterProp <- function(seurat, cluster_col, condition_col, replicate_col, data = FALSE,
+                        save_dir = NULL) {
+  if (is.null(save_dir)){
+    save_dir = getwd()
+  } 
+  
   df <- seurat@meta.data %>%
     dplyr::select(!!as.name(condition_col), !!as.name(cluster_col), !!as.name(replicate_col)) %>%
     add_count(!!as.name(condition_col), name = "total_cells_in_condition") %>%
@@ -275,17 +269,17 @@ ClusterProp <- function(seurat, cluster_col, condition_col, replicate_col, data 
       
       (p1 | p2) + plot_annotation(title = str_glue('Percentage of {act} {tcell} cells by cluster'))
       
-      ggsave(str_glue('/Users/bryanwgranger/biocm/projects/ferreira/s3/main_analysis/{tcell}_{act}_prop_per_cluster.pdf'), width = 10, height = 8)
-      
-      if (isTRUE(data)) {
-        new_df <- df %>%
-          tidyr::unite("combos", !!(as.name(replicate_col)), !!as.name(condition_col), remove = FALSE) %>%
-          tidyr::pivot_wider(names_from = combos,
-                             id_cols = cluster,
-                             values_from = c(pct, n_cells_in_cluster)) %>%
-          arrange(factor(cluster, levels = seq(0, length(cluster)-1)))
-        return (new_df)
-      }
+      ggsave(str_glue('{save_dir}{tcell}_{act}_prop_per_cluster.pdf'), width = 10, height = 8)
     }
   }
+  if (isTRUE(data)) {
+    new_df <- df %>%
+      tidyr::unite("combos", !!(as.name(replicate_col)), !!as.name(condition_col), remove = FALSE) %>%
+      tidyr::pivot_wider(names_from = combos,
+                         id_cols = cluster,
+                         values_from = c(pct, n_cells_in_cluster)) %>%
+      arrange(factor(cluster, levels = seq(0, length(cluster)-1)))
+    return (new_df)
+      }
+   
 }
