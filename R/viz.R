@@ -269,7 +269,7 @@ ClusterProp <- function(seurat, cluster_col, condition_col, replicate_col, data 
       
       (p1 | p2) + plot_annotation(title = str_glue('Percentage of {act} {tcell} cells by cluster'))
       
-      ggsave(str_glue('{save_dir}{tcell}_{act}_prop_per_cluster.pdf'), width = 10, height = 8)
+      ggsave(file.path(save_dir, str_glue('{tcell}_{act}_prop_per_cluster.pdf')), width = 10, height = 8)
     }
   }
   if (isTRUE(data)) {
