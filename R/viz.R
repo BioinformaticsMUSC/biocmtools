@@ -20,7 +20,7 @@ BarProp <- function(seurat, x_axis, split_by) {
     distinct() %>%
     mutate(Percentage = split_counts / total_cluster_cells)
   
-    ggplot(df, aes(x = factor(!!as.name(x_axis), levels = seq(0, length(unique(!!as.name(x_axis)))-1)),
+    ggplot(df, aes(x = factor(!!as.name(x_axis), levels = sort(unique(!!as.name(x_axis)))),
                y = Percentage,
                fill = !!as.name(split_by),
                col = !!as.name(split_by))) +

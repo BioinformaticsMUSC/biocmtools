@@ -1,5 +1,7 @@
 notebook*
 
+*.pbs
+
 *.Rproj
 .Rbuildignore
 .DS_Store
