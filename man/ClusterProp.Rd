@@ -4,7 +4,14 @@
 \alias{ClusterProp}
 \title{Create a viz with a UMAP and a bar plot showing percentage of cells assigned to clusters}
 \usage{
-ClusterProp(seurat, cluster_col, condition_col, replicate_col, data = FALSE)
+ClusterProp(
+  seurat,
+  cluster_col,
+  condition_col,
+  replicate_col,
+  data = FALSE,
+  save_dir = NULL
+)
 }
 \arguments{
 \item{cluster_col}{The column in the Seurat object meta.data to use to determine clusters (e.g. seurat_clusters)}
