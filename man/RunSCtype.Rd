@@ -30,3 +30,6 @@ Seurat object
 \description{
 Run sc Type on a seurat object
 }
+\examples{
+RunSCtype(seurat_obj, tissue = "Brain", idents = "seurat_clusters")
+}

@@ -10,18 +10,12 @@
 #' @param new_col_name The name of the new column in the seurat object with sc-type predictions
 #' @return Seurat object
 #' @import Seurat 
-#' @import plyr 
 #' @import dplyr
 #' @import HGNChelper
 #' @examples
-#' RunSCtype(seurat_obj, tissue = "Brain, idents = "seurat_clusters")
+#' RunSCtype(seurat_obj, tissue = "Brain", idents = "seurat_clusters")
 #' @export
 RunSCtype <- apply_scType <- function (seurat, tissue, idents = NULL, assay = NULL, new_col_name = NULL, verbose = TRUE) {
-  # suppressMessages(suppressWarnings({
-  #   library(Seurat)
-  #   library(dplyr)
-  #   library(HGNChelper)
-  # }))
   if (is.null(tissue)) {
     stop('must select a tissue to proceed')
   }
@@ -78,8 +72,8 @@ RunSCtype <- apply_scType <- function (seurat, tissue, idents = NULL, assay = NU
   #Map to new column
   current.cluster.ids <- sctype_scores$cluster
   new.cluster.ids <- as.character(sctype_scores$type)
-  seurat[[new_col_name]] <-
-    plyr::mapvalues(seurat@active.ident, from = current.cluster.ids, to = new.cluster.ids)
+  names(new.cluster.ids) <- current.cluster.ids
+  seurat[[new_col_name]] <- recode(seurat@active.ident, !!!new.cluster.ids)
   
   if (isTRUE(verbose)) {
     print(sctype_scores)
