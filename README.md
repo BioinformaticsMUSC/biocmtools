@@ -80,3 +80,16 @@ This function creates an array of Clean DimPlots split by a specified category i
 MultiDimPlot(seurat, group_by = 'Cell', split_by = 'condition', ncol = 4)
 ```
 
+### RunSCtype
+
+This function runs sc-type on a Seurat objecgt. It uses the following parameters:
+- seurat = seurat object
+- tissue = the type of tissue you are annotating (must be available in sc-type)
+- idents = the clustering column to use (e.g. "seurat_clusters")
+- assay = should be RNA or SC (default is SCT)
+- new_col_name = the title of the new cell type annotation column (default is `sctype_{tissue}_prediction`)
+
+```
+RunSCtype(seurat, tissue = 'Brain', idents = 'seurat_clusters', assay = 'SCT')
+```
+

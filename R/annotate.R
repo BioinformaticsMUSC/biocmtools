@@ -15,7 +15,8 @@
 #' @examples
 #' RunSCtype(seurat_obj, tissue = "Brain", idents = "seurat_clusters")
 #' @export
-RunSCtype <- apply_scType <- function (seurat, tissue, idents = NULL, assay = NULL, new_col_name = NULL, verbose = TRUE) {
+RunSCtype <- function (seurat, tissue, idents = NULL, assay = NULL, new_col_name = NULL, verbose = TRUE) {
+  require(HGNChelper)
   if (is.null(tissue)) {
     stop('must select a tissue to proceed')
   }
