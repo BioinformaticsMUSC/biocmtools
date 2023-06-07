@@ -43,7 +43,7 @@ RunSCtype <- function (seurat, tissue, idents = NULL, assay = NULL, new_col_name
   )
   
   gs_list = gene_sets_prepare(
-    "https://raw.githubusercontent.com/IanevskiAleksandr/sc-type/master/ScTypeDB_short.xlsx",
+    "https://raw.githubusercontent.com/IanevskiAleksandr/sc-type/master/ScTypeDB_full.xlsx",
     tissue
   )
   
