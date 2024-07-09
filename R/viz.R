@@ -10,7 +10,7 @@
 #' @examples
 #' BarProp(seurat_obj, 'seurat_clusters', 'cell_type')
 #' @export
-BarProp <- function(seurat, x_axis, split_by) {
+BarProp <- function(seurat, x_axis, split_by, add_counts = FALSE) {
   
   df <- seurat@meta.data %>%
     as.data.frame() %>%
@@ -20,13 +20,19 @@ BarProp <- function(seurat, x_axis, split_by) {
     distinct() %>%
     mutate(Percentage = split_counts / total_cluster_cells)
   
-    ggplot(df, aes(x = factor(!!as.name(x_axis), levels = sort(unique(!!as.name(x_axis)))),
+    fig <- ggplot(df, aes(x = factor(!!as.name(x_axis), levels = sort(unique(!!as.name(x_axis)))),
                y = Percentage,
                fill = !!as.name(split_by),
                col = !!as.name(split_by))) +
     geom_bar(stat = "identity") + ggtitle(str_glue("Bar Proportion Plot")) +
     theme(axis.text.x = element_text(angle = 60, vjust = 0.9, hjust = 1)) +
       xlab(x_axis)
+    
+    if (isTRUE(add_counts)) {
+      fig <- fig +
+        geom_text(aes(label = split_counts), vjust = 0.9, color = "black")
+    }
+    return (fig)
 }
 
 #' Create a list of colors for a palette

@@ -67,3 +67,96 @@ FindAllDEGs <- function (seurat_obj,
   
   return (all_markers)
 }
+#' Quickly create volcano plots for each celltype
+#'
+#' @param de_results A table of differential expression results grouped by celltype
+#' @param celltype_col The label column for organizing groups 
+#' @param gene_col The column of genes
+#' @param fold_change_col The name of the log fold change column
+#' @param save Save individual plots for each celltype
+#' @return List of ggplots
+#' @importFrom dplyr mute case_when filter 
+#' @importFrom tidyr unite
+#' @importFrom ggplot2 xlab ylab geom_vline geom_hline theme arrow annotate xlim ggsave ggtitle
+#' @importFrom ggpubr ggscatter
+#' @importFrom ggrepel geom_text_repel
+#' @importFrom stringr str_glue
+#' @examples
+#' QuickVolcano(de_results, celltype_col = "celltype", gene_col = "gene", fold_change_col = "avg_log2FC", save = TRUE)
+#' @export
+QuickVolcano <- function(de_results, 
+                         celltype_col, 
+                         gene_col, 
+                         fold_change_col,
+                         p_val_adj,
+                         test_group_name = NULL, save = TRUE) {
+  
+  if (!is.null(test_group_name)) {
+    upreg_msg = paste0("Upreg in ", test_group_name)
+    downreg_msg = paste0("Downreg in ", test_group_name)
+  } else {
+    upreg_msg = "Upregulated"
+    downreg_msg = "Downregulated"
+  }
+
+  data <- de_results |>
+    dplyr::mutate(LOG = -log10(!!as.name(p_val_adj))) |>
+    dplyr::mutate(direction = dplyr::case_when(!!as.name(fold_change_col) > 0 ~ "Upreg",
+                                               .default = "Downreg")) |>
+    dplyr::mutate(significance = dplyr::case_when(abs(!!as.name(fold_change_col)) > 0.3 & !!as.name(p_val_adj) < 0.5 ~ "sig", 
+                                                  .default = 'not_sig')) |>
+    tidyr::unite("direction_sig", direction, significance, remove = FALSE)
+  
+  data$direction_sig <- factor(data$direction_sig, levels = c("Upreg_sig", "Upreg_not_sig", "Downreg_not_sig", "Downreg_sig"))
+
+  max_x = round(max(abs(data[[fold_change_col]])), 0)
+  
+  
+  plot_list = list()
+  for (ct in unique(data[[celltype_col]])) {
+    tmp_data <- data |> dplyr::filter(!!as.name(celltype_col) == ct)
+    downreg_count = sum(tmp_data[[fold_change_col]] < 0)
+    upreg_count = sum(tmp_data[[fold_change_col]] > 0)
+    max_y <- max(dplyr::filter(tmp_data, !!as.name(p_val_adj) != 0)$LOG)
+    print(ct)
+    print(nrow(tmp_data))
+    plot_list[[paste0("c",ct)]] <- ggpubr::ggscatter(tmp_data, 
+                                 x = fold_change_col, 
+                                 y = "LOG",
+                                 color = "direction_sig", 
+                                 palette = list(Upreg_sig="red",
+                                                Upreg_not_sig="gray", 
+                                                Downreg_not_sig="gray", 
+                                                Downreg_sig="blue"),
+                                 size = 1,
+                                 alpha=0.3,
+                                 shape=19)+
+      ggplot2::xlab("log2(Fold Change)")+ 
+      ggplot2::ylab("-log10(FDR)")+
+      ggplot2::geom_vline(xintercept = 0, colour = "grey",linetype="dotted",size=1,alpha=0.5) + 
+      ggplot2::geom_vline(xintercept = 0.3, colour = "black",linetype="dotted",size=1,alpha=0.5) + 
+      ggplot2::geom_vline(xintercept = -0.3, colour = "black",linetype="dotted",size=1,alpha=0.5) + 
+      ggplot2::geom_hline(yintercept = 1.3, colour = "grey",linetype="dotted",size=1,alpha=0.5) +
+      ggplot2::annotate("segment", x = 1, xend = 2, y = max_y + 15, yend = max_y + 15,
+               size = 0.4, arrow = ggplot2::arrow(length = unit(0.1, "inches"), type = "closed")) + 
+      ggplot2::annotate("segment", x = -1, xend = -2, y = max_y + 15, yend = max_y + 15,
+               size = 0.4, arrow = ggplot2::arrow(length = unit(0.1, "inches"), type = "closed")) +
+      ggplot2::annotate("text", x = 2, y = max_y + 20, label = upreg_msg, size = 3) +
+      ggplot2::annotate("text", x = -2, y = max_y + 20, label = downreg_msg, size = 3) +
+      ggrepel::geom_text_repel(data = tmp_data, 
+                      mapping = aes(label = !!as.name(gene_col)), 
+                      size = 3,
+                      box.padding = unit(0.4, "lines"),
+                      point.padding = unit(0.4, "lines"))+
+      #ggplot2::theme(legend.position="none") +
+      ggplot2::xlim(-max_x,max_x) +
+      ggplot2::ggtitle(ct) +
+      ggplot2::labs(caption = stringr::str_glue("Downreg: {downreg_count}\nUpreg: {upreg_count}")) +
+      ggplot2::theme(plot.caption = element_text(size=7),
+                     legend.position="none")
+    if (isTRUE(save)) {
+      ggplot2::ggsave(stringr::str_glue("volc_{ct}.pdf"), width = 4, height = 4) 
+    }
+  }
+  return (plot_list)
+}
