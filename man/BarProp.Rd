@@ -4,7 +4,7 @@
 \alias{BarProp}
 \title{Create a proportional bar plot}
 \usage{
-BarProp(seurat, x_axis, split_by)
+BarProp(seurat, x_axis, split_by, add_counts = FALSE)
 }
 \arguments{
 \item{x_axis}{The column in the Seurat object meta.data to use as the x axis}

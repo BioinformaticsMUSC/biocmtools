@@ -75,7 +75,7 @@ FindAllDEGs <- function (seurat_obj,
 #' @param fold_change_col The name of the log fold change column
 #' @param save Save individual plots for each celltype
 #' @return List of ggplots
-#' @importFrom dplyr mute case_when filter 
+#' @importFrom dplyr mutate case_when filter 
 #' @importFrom tidyr unite
 #' @importFrom ggplot2 xlab ylab geom_vline geom_hline theme arrow annotate xlim ggsave ggtitle
 #' @importFrom ggpubr ggscatter

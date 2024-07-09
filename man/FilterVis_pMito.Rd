@@ -5,6 +5,8 @@
 \title{Visualize the amount of cells removed due to pMito filtering}
 \usage{
 FilterVis_pMito(seurat_obj, pMito_thresh, group_col, pMito_col = "pMito")
+
+FilterVis_pMito(seurat_obj, pMito_thresh, group_col, pMito_col = "pMito")
 }
 \arguments{
 \item{seurat_obj}{The Seurat object}
@@ -17,10 +19,15 @@ FilterVis_pMito(seurat_obj, pMito_thresh, group_col, pMito_col = "pMito")
 }
 \value{
 ggplot
+
+ggplot
 }
 \description{
 Visualize the amount of cells removed due to pMito filtering
+
+Create Venn Diagrams of filtered out cells
 }
 \examples{
+FilterVis_pMito(seurat_obj, pMito_thresh = 15, group_col = "sample", pMito_col = "pMito")
 FilterVis_pMito(seurat_obj, pMito_thresh = 15, group_col = "sample", pMito_col = "pMito")
 }
