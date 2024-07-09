@@ -67,6 +67,7 @@ FindAllDEGs <- function (seurat_obj,
   
   return (all_markers)
 }
+
 #' Quickly create volcano plots for each celltype
 #'
 #' @param de_results A table of differential expression results grouped by celltype
@@ -118,8 +119,6 @@ QuickVolcano <- function(de_results,
     downreg_count = sum(tmp_data[[fold_change_col]] < 0)
     upreg_count = sum(tmp_data[[fold_change_col]] > 0)
     max_y <- max(dplyr::filter(tmp_data, !!as.name(p_val_adj) != 0)$LOG)
-    print(ct)
-    print(nrow(tmp_data))
     plot_list[[paste0("c",ct)]] <- ggpubr::ggscatter(tmp_data, 
                                  x = fold_change_col, 
                                  y = "LOG",
@@ -141,8 +140,8 @@ QuickVolcano <- function(de_results,
                size = 0.4, arrow = ggplot2::arrow(length = unit(0.1, "inches"), type = "closed")) + 
       ggplot2::annotate("segment", x = -1, xend = -2, y = max_y + 15, yend = max_y + 15,
                size = 0.4, arrow = ggplot2::arrow(length = unit(0.1, "inches"), type = "closed")) +
-      ggplot2::annotate("text", x = 2, y = max_y + 20, label = upreg_msg, size = 3) +
-      ggplot2::annotate("text", x = -2, y = max_y + 20, label = downreg_msg, size = 3) +
+      ggplot2::annotate("text", x = .8 * max_x, y = max_y + 20, label = upreg_msg, size = 3) +
+      ggplot2::annotate("text", x = .8 * -max_x, y = max_y + 20, label = downreg_msg, size = 3) +
       ggrepel::geom_text_repel(data = tmp_data, 
                       mapping = aes(label = !!as.name(gene_col)), 
                       size = 3,
